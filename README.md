@@ -4,7 +4,7 @@ Advanced AdminsList plugin for cs2, this shows the admins in CenterHtmlMenu or c
 it has one command = !adminslist
 
 Config model:
-```
+```js
 {
 
   "UseCenterHtmlMenu": true,
