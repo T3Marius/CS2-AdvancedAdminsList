@@ -2,6 +2,7 @@
 Advanced AdminsList plugin for cs2, this shows the admins in CenterHtmlMenu or chat, with his admin group too. The plugin automaticly locate the admin_groups file and get the groups from there.
 
 Config model:
+
 {
 
   "UseCenterHtmlMenu": true,
