@@ -14,6 +14,7 @@ using CounterStrikeSharp.API.Modules.Menu;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Utils;
 using Serilog;
+using System.Numerics;
 
 namespace AdminsList
 {
@@ -33,6 +34,18 @@ namespace AdminsList
 
         [JsonPropertyName("ShowAdminGroups")]
         public bool ShowAdminGroups { get; set; } = true;
+
+        [JsonPropertyName("AdminGroupsFilePath")]
+        public string AdminGroupsFilePath { get; set; } = "/home/container/game/csgo/addons/counterstrikesharp/configs/admin_groups.json";
+
+        [JsonPropertyName("Commands")]
+        public Config_Commands Commands { get; set; } = new Config_Commands();
+
+        public class Config_Commands
+        {
+            [JsonPropertyName("Adminslist")]
+            public string[] Adminslist { get; set; } = { "adminslist" };
+        }
     }
 
     public class AdminsList : BasePlugin, IPluginConfig<PluginConfig>
@@ -41,39 +54,62 @@ namespace AdminsList
         public override string ModuleVersion => "1.0";
         public override string ModuleAuthor => "T3Marius";
         public PluginConfig Config { get; set; } = new PluginConfig();
-        public static AdminsList Instance { get; set; } = new();
+        public static AdminsList Instance { get; set; } = new ();
 
         public override void Load(bool hotReload)
         {
             Instance = this;
-            AdminGroupManager.LoadAdminGroups();
+            AdminGroupManager.LoadAdminGroups(Config.AdminGroupsFilePath);
+            Commands.Load();
         }
 
         public void OnConfigParsed(PluginConfig config)
         {
             Config = config;
+            AdminGroupManager.LoadAdminGroups(config.AdminGroupsFilePath);
         }
 
-        [CommandHelper(whoCanExecute: CommandUsage.CLIENT_ONLY)]
-        [ConsoleCommand("css_adminslist", "Shows the list of admins on the server")]
-        public void OnAdminslistCommand(CCSPlayerController? player, CommandInfo command)
+        public static class Commands
         {
-            if (player == null)
+            public static void Load()
             {
-                return;
+
+
+                PluginConfig config = Instance.Config;
+
+                var commands = new Dictionary<IEnumerable<string>, (string description, CommandInfo.CommandCallback handler)>
+                {
+                    { config.Commands.Adminslist, ("Shows list of admins online", Command_Adminslist) }
+                };
+
+                foreach (var commandPair in commands)
+                {
+                    foreach (var command in commandPair.Key)
+                    {
+                        Instance.AddCommand($"css_{command}", commandPair.Value.description, commandPair.Value.handler);
+                    }
+                }
             }
 
-            List<CCSPlayerController> admins = GetAllPlayers()
-                .Where(p => p.IsValid && !p.IsBot && AdminManager.PlayerHasPermissions(p, Config.ShowFlag) && !AdminManager.PlayerHasPermissions(p, Config.ImmunityFlag))
-                .ToList();
+            public static void Command_Adminslist(CCSPlayerController? player, CommandInfo command)
+            {
+                if (player == null) return;
 
-            if (Config.UseCenterHtmlMenu)
-            {
-                AdminMenu.DisplayAdmins(player, admins, Config.ShowYourSelf, Config.ShowAdminGroups);
-            }
-            else
-            {
-                DisplayAdminsInChat(player, admins, Config.ShowYourSelf, Config.ShowAdminGroups);
+                var instance = AdminsList.Instance;
+                var config = instance.Config;
+
+                var admins = instance.GetAllPlayers()
+                    .Where(p => p.IsValid && !p.IsBot && AdminManager.PlayerHasPermissions(p, config.ShowFlag) && !AdminManager.PlayerHasPermissions(p, config.ImmunityFlag))
+                    .ToList();
+
+                if (config.UseCenterHtmlMenu)
+                {
+                    AdminMenu.DisplayAdmins(player, admins, config.ShowYourSelf, config.ShowAdminGroups);
+                }
+                else
+                {
+                    instance.DisplayAdminsInChat(player, admins, config.ShowYourSelf, config.ShowAdminGroups);
+                }
             }
         }
 
@@ -116,7 +152,7 @@ namespace AdminsList
         {
             using (new WithTemporaryCulture(player.GetLanguage()))
             {
-                StringBuilder builder = new();
+                StringBuilder builder = new StringBuilder();
                 builder.AppendFormat(AdminsList.Instance.Localizer[display, args]);
 
                 menu.AddMenuOption(builder.ToString(), onSelect);
@@ -127,7 +163,7 @@ namespace AdminsList
         {
             using (new WithTemporaryCulture(player.GetLanguage()))
             {
-                StringBuilder builder = new();
+                StringBuilder builder = new StringBuilder();
                 builder.AppendFormat(AdminsList.Instance.Localizer["AdminsList<title>"]);
 
                 CenterHtmlMenu menu = new(builder.ToString(), AdminsList.Instance);
@@ -140,14 +176,12 @@ namespace AdminsList
                         continue;
                     }
 
-                    StringBuilder adminBuilder = new();
+                    StringBuilder adminBuilder = new StringBuilder();
                     string adminName = admin.PlayerName;
                     string adminGroup = showGroups ? AdminGroupManager.GetAdminGroupName(admin) : string.Empty;
                     adminBuilder.AppendFormat(AdminsList.Instance.Localizer["menu_adminslist<admin>", $"{adminName}{(showGroups ? $" - {adminGroup}" : string.Empty)}"]);
 
-                    menu.AddMenuOption(adminBuilder.ToString(), (CCSPlayerController _, ChatMenuOption _) =>
-                    {
-                    });
+                    menu.AddMenuOption(adminBuilder.ToString(), (CCSPlayerController _, ChatMenuOption _) => { });
 
                     adminNumber++;
                 }
@@ -170,9 +204,14 @@ namespace AdminsList
     {
         public static Dictionary<string, AdminGroup>? AdminGroups { get; private set; }
 
-        public static void LoadAdminGroups()
+        public static void LoadAdminGroups(string filePath)
         {
-            string json = File.ReadAllText("/home/container/game/csgo/addons/counterstrikesharp/configs/admin_groups.json");
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"Admin groups file not found: {filePath}");
+            }
+
+            string json = File.ReadAllText(filePath);
             AdminGroups = JsonSerializer.Deserialize<Dictionary<string, AdminGroup>>(json);
         }
 
