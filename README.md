@@ -13,7 +13,7 @@ Config model:
   
   "ShowFlag": "@css/generic",
   
-  "ShowAdminGroups": false,
+  "ShowAdminGroups": true,
   
   "ConfigVersion": 1
   
