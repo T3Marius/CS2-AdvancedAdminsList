@@ -1,0 +1,4 @@
+{
+  "AdminsList<title>": "Admins Online",
+  "menu_adminslist<admin>": "{0}" // where {0} will be replaced with the admin name
+}
