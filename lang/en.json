@@ -1,4 +1,5 @@
 {
-  "AdminsList<title>": "Admins Online",
-  "menu_adminslist<admin>": "{0}" // where {0} will be replaced with the admin name
+  "AdminsList<title>": "{lightred}Admins Online",
+  "menu_adminslist<admin>": "{0}",  
+  "AdminsList<no_admins>": "{lightred}At the moment there are no admins on the server."
 }
