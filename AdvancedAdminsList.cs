@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -73,8 +73,6 @@ namespace AdminsList
         {
             public static void Load()
             {
-
-
                 PluginConfig config = Instance.Config;
 
                 var commands = new Dictionary<IEnumerable<string>, (string description, CommandInfo.CommandCallback handler)>
@@ -120,7 +118,7 @@ namespace AdminsList
 
         private void DisplayAdminsInChat(CCSPlayerController player, List<CCSPlayerController> admins, bool showSelf, bool showGroups)
         {
-            player.PrintToChat($"{ChatColors.Red}Admins Online:");
+            player.PrintToChat($"{Localizer["AdminsList<title>"]}"); 
             player.PrintToChat($"{ChatColors.Red}------------------------");
 
             int adminNumber = 1;
@@ -133,7 +131,7 @@ namespace AdminsList
 
                 string adminName = admin.PlayerName;
                 string adminGroup = showGroups ? AdminGroupManager.GetAdminGroupName(admin) : string.Empty;
-                player.PrintToChat($"[{adminNumber}] {ChatColors.LightRed}{adminName}{(showGroups ? $" - {adminGroup}" : string.Empty)}");
+                player.PrintToChat($"[{adminNumber}] {ChatColors.LightRed}{Localizer["menu_adminslist<admin>"]}", $"{adminName}{(showGroups ? $" - {adminGroup}" : string.Empty)}");  // Line 124
                 adminNumber++;
             }
 
@@ -141,7 +139,7 @@ namespace AdminsList
 
             if (adminNumber == 1)
             {
-                player.PrintToChat($"{ChatColors.Red}At the moment there are no admins on the server.");
+                player.PrintToChat($"{Localizer["AdminsList<no_admins>"]}");
             }
         }
     }
@@ -153,7 +151,7 @@ namespace AdminsList
             using (new WithTemporaryCulture(player.GetLanguage()))
             {
                 StringBuilder builder = new StringBuilder();
-                builder.AppendFormat(AdminsList.Instance.Localizer[display, args]);
+                builder.AppendFormat(AdminsList.Instance.Localizer[display], args);
 
                 menu.AddMenuOption(builder.ToString(), onSelect);
             }
@@ -164,7 +162,7 @@ namespace AdminsList
             using (new WithTemporaryCulture(player.GetLanguage()))
             {
                 StringBuilder builder = new StringBuilder();
-                builder.AppendFormat(AdminsList.Instance.Localizer["AdminsList<title>"]);
+                builder.AppendFormat(AdminsList.Instance.Localizer["AdminsList<title>"]);  // Line 123
 
                 CenterHtmlMenu menu = new(builder.ToString(), AdminsList.Instance);
 
@@ -179,9 +177,9 @@ namespace AdminsList
                     StringBuilder adminBuilder = new StringBuilder();
                     string adminName = admin.PlayerName;
                     string adminGroup = showGroups ? AdminGroupManager.GetAdminGroupName(admin) : string.Empty;
-                    adminBuilder.AppendFormat(AdminsList.Instance.Localizer["menu_adminslist<admin>", $"{adminName}{(showGroups ? $" - {adminGroup}" : string.Empty)}"]);
+                    adminBuilder.AppendFormat(AdminsList.Instance.Localizer["menu_adminslist<admin>"], $"{adminName}{(showGroups ? $" - {adminGroup}" : string.Empty)}");  // Line 140
 
-                    menu.AddMenuOption(adminBuilder.ToString(), (CCSPlayerController _, ChatMenuOption _) => { });
+                    menu.AddMenuOption(adminBuilder.ToString(), (CCSPlayerController _, ChatMenuOption _) => { });  // Line 144
 
                     adminNumber++;
                 }
